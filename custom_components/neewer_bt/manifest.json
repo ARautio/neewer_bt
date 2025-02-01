@@ -1,0 +1,21 @@
+{
+  "domain": "NEEWER_BT",
+  "name": "Neewer Bluetooth",
+  "bluetooth": [
+    {
+      "local_name": "NEEWER-TL40*",
+      "connectable": true
+    }
+  ],
+  "codeowners": [
+    "@ARautio"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
+  "requirements": [],
+  "documentation": "https://github.com/ARautio/neewer_bt",
+  "version": "0.1.0",
+  "iot_class": "assumed_state"
+}

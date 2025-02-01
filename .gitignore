@@ -1,0 +1,6 @@
+debug
+env
+scan_devices.py
+.DS_Store
+.devcontainer/
+.vscode/
