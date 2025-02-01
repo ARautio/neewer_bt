@@ -16,6 +16,7 @@
   ],
   "requirements": [],
   "documentation": "https://github.com/ARautio/neewer_bt",
+  "issue_tracker": "https://github.com/ARautio/neewer_bt/issues",
   "version": "0.1.0",
   "iot_class": "assumed_state"
 }

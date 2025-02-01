@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from bleak.exc import BleakError
+from custom_components.neewer_bt.coordinator import NeewerBTCoordinator
 from custom_components.neewer_bt.neewer.device import NeewerBTDevice
 from homeassistant.components.light import (
     LightEntity,
@@ -25,22 +26,22 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Neewer light."""
-    device = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([NeewerLight(device, entry)])
+    coordinator = NeewerBTCoordinator(hass, entry)
+    await coordinator.async_config_entry_first_refresh()
+    async_add_entities([NeewerLight(coordinator, entry)])
 
 class NeewerLight(LightEntity):
     """Neewer TL40 light."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, device, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: NeewerBTCoordinator, entry: ConfigEntry) -> None:
         """Initialize the light."""
-        self._device = device
+        self._coordinator = coordinator
         self._attr_unique_id = entry.data[CONF_ADDRESS]
         self._attr_name = entry.data[CONF_NAME]
         self._model = entry.data[CONF_MODEL]
-        self._model_info = MODELS.get(self._model, MODELS["NEEWER-TL40"])
-        self._commands = NeewerBTDevice(device, self._model)
+        self._model_info = MODELS.get(self._model, MODELS["NEEWER_TL40"])
         self._attr_is_on = False
 
     @property
@@ -53,14 +54,15 @@ class NeewerLight(LightEntity):
             model=self._model_info["name"],
         )
 
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if light is on."""
+        return self._coordinator.data.state
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on light."""
-        await self._commands.turn_on()
-        self._attr_is_on = True
-        self.async_write_ha_state()
+        await self._coordinator.turn_on()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off light."""
-        await self._commands.turn_off()
-        self._attr_is_on = False
-        self.async_write_ha_state()
+        await self._coordinator.turn_off()
