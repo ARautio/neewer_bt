@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.light import (
     LightEntity,
+    ColorMode
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_MODEL
@@ -20,17 +21,19 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Neewer light."""
-    coordinator = NeewerBTCoordinator(hass, entry)
+    coordinator: NeewerBTCoordinator = config_entry.runtime_data.coordinator
     await coordinator.async_config_entry_first_refresh()
-    async_add_entities([NeewerLight(coordinator, entry)])
+    async_add_entities([NeewerLight(coordinator, config_entry)])
 
 class NeewerLight(LightEntity):
     """Neewer TL40 light."""
 
+    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_color_mode = ColorMode.ONOFF
     _attr_has_entity_name = True
 
     def __init__(self, coordinator: NeewerBTCoordinator, entry: ConfigEntry) -> None:
@@ -40,7 +43,6 @@ class NeewerLight(LightEntity):
         self._attr_name = entry.data[CONF_NAME]
         self._model = entry.data[CONF_MODEL]
         self._model_info = MODELS.get(self._model, MODELS["NEEWER_TL40"])
-        self._attr_is_on = False
 
     @property
     def device_info(self) -> DeviceInfo:

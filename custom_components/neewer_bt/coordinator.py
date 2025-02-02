@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class NeewerBTData:
-    """Class to hold api data."""
+    """State data for Neewer BT device."""
     state: bool | None = None
 
 class NeewerBTCoordinator(DataUpdateCoordinator):
@@ -44,7 +44,8 @@ class NeewerBTCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=f"{DOMAIN} ({config_entry.unique_id})",
-            update_method=self._async_update_data,
+            update_method=self.async_update_data,
+            update_interval=timedelta(seconds=self.poll_interval)
         )
 
     async def turn_on(self) -> None:
@@ -59,8 +60,8 @@ class NeewerBTCoordinator(DataUpdateCoordinator):
         self.data.state = False
         self.async_set_updated_data(self.data)
 
-    async def _async_update_data(self):
-        data = NeewerBTData()
-        # Fix this if we find a way to fetch data
-        data.state = False
-        return data
+    async def async_update_data(self):
+        data = self.data
+        if data is None or data.state is None:
+            data.state = False
+        return self.data
