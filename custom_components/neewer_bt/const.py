@@ -3,7 +3,7 @@ from typing import Final
 
 from .neewer.const import MODELS
 
-DOMAIN = "NEEWER_BT"
+DOMAIN = "neewer_bt"
 
 LOCAL_NAMES = set(MODELS.keys())
 MANUFACTURER = "Neewer"
