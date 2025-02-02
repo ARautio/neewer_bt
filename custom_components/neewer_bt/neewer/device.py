@@ -23,41 +23,37 @@ class NeewerBTDevice:
         checksum = sum(command) & 0xFF  # Sum all bytes and take last byte only
         return command + bytes([checksum])
     
-    async def turn_on(self) -> None:
-        """Send turn on command."""
-        """Send turn on command."""
-        if self._client is None:
-            await self._connect()
-        if self._client:  # Type guard
-            await self._client.write_gatt_char(
-                self._char_write, 
-                self._include_checksum(self._model_info["turn_on"]), 
-                response=False
-            )
-            await self._disconnect()
-    
-    async def turn_off(self) -> None:
-        """Send turn off command."""
-        if self._client is None:
-            await self._connect()
-        if self._client:  # Type guard
-            await self._client.write_gatt_char(
-                self._char_write, 
-                self._include_checksum(self._model_info["turn_off"]), 
-                response=False
-            )
-            await self._disconnect()
-
     async def _connect(self) -> None:
         """Connect to the device."""
+        async with self._lock:
+            try:
+                if not self._client or not self._client.is_connected:
+                    self._client = BleakClient(self._device.address)
+                    await self._client.connect()
+            except BleakError as ex:
+                self._client = None
+                raise ConnectionError(f"Failed to connect: {ex}") from ex
+
+    async def _write_command(self, command: bytes) -> None:
+        """Write command to device with connection handling."""
         try:
-            self._client = BleakClient(self._device)
-            await self._client.connect()
-        except BleakError as ex:
-            self._client = None
-            raise ConnectionError from ex
-        
-    async def _disconnect(self) -> None:
-        """Disconnect from the device."""
-        await self._client.disconnect()
-        self._client = None
+            await self._connect()
+            await self._client.write_gatt_char(
+                self._char_write,
+                self._include_checksum(command),
+                response=False
+            )
+        finally:
+            if self._client and self._client.is_connected:
+                await self._client.disconnect()
+                self._client = None
+
+    async def turn_on(self) -> None:
+        """Send turn on command."""
+        await self._write_command(self._model_info["turn_on"])
+        self.state = True
+
+    async def turn_off(self) -> None:
+        """Send turn off command."""
+        await self._write_command(self._model_info["turn_off"])
+        self.state = False
