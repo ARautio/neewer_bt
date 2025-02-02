@@ -1,16 +1,11 @@
 from typing import TYPE_CHECKING, Optional
 
-if TYPE_CHECKING:
-    from bleak.backends.device import BLEDevice
-
-from homeassistant.components import bluetooth
-
 from ..const import MODELS
 
 class NeewerBTDevice:
     """Handle Neewer device."""
 
-    def __init__(self, device: BLEDevice, model: str):
+    def __init__(self, device, model: str):
         self.state: Optional[bool] = None
         self._device = device
         self._model_info = MODELS[model]
