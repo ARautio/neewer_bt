@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import timedelta
 
-from custom_components.neewer_bt.neewer.device import NeewerBTDevice
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_MODEL
 from homeassistant.core import HomeAssistant
@@ -9,6 +8,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.components import bluetooth
 
 from .const import DOMAIN
+from .neewer.device import NeewerBTDevice
 
 
 import logging

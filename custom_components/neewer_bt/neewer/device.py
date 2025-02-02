@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 from homeassistant.components import bluetooth
 
-from custom_components.neewer_bt.const import MODELS
+from ..const import MODELS
 
 class NeewerBTDevice:
     """Handle Neewer device."""

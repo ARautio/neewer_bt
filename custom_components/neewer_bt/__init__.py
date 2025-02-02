@@ -13,8 +13,7 @@ from homeassistant.components.bluetooth import (
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from custom_components.neewer_bt.coordinator import NeewerBTCoordinator
-
+from .coordinator import NeewerBTCoordinator
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)

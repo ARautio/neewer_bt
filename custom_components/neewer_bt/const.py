@@ -1,7 +1,7 @@
 """Constants for the Neewer integration."""
 from typing import Final
 
-from custom_components.neewer_bt.neewer.const import MODELS
+from .neewer.const import MODELS
 
 DOMAIN = "NEEWER_BT"
 
