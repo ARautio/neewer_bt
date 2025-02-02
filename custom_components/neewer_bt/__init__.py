@@ -7,7 +7,9 @@ from typing import Callable
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_ADDRESS
 from homeassistant.core import HomeAssistant
-from homeassistant.components.bluetooth import bluetooth
+from homeassistant.components.bluetooth import (
+    async_ble_device_from_address
+)
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -36,7 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     #look for device
     device_address = entry.data[CONF_ADDRESS]
-    if not bluetooth.async_ble_device_from_address(hass, device_address, False):
+    if not async_ble_device_from_address(hass, device_address, False):
         raise ConfigEntryNotReady(
             f"Could not find LED BLE device with address {device_address}"
         )

@@ -4,9 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from bleak.exc import BleakError
 from custom_components.neewer_bt.coordinator import NeewerBTCoordinator
-from custom_components.neewer_bt.neewer.device import NeewerBTDevice
 from homeassistant.components.light import (
     LightEntity,
 )
