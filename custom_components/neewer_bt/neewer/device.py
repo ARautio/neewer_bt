@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
@@ -9,11 +9,9 @@ from ..const import MODELS
 
 class NeewerBTDevice:
     """Handle Neewer device."""
-    state = bool | None = None
-
 
     def __init__(self, device: BLEDevice, model: str):
-        self.state = None
+        self.state: Optional[bool] = None
         self._device = device
         self._model_info = MODELS[model]
         self._char_write = self._model_info["char_write"]
