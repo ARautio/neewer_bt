@@ -1,7 +1,7 @@
 from typing import Optional
+import asyncio
 
 from bleak import BleakClient, BleakError
-from bleak_retry_connector import establish_connection
 
 from ..const import MODELS
 
@@ -14,6 +14,7 @@ class NeewerBTDevice:
         self._client: Optional[BleakClient] = None
         self._model_info = MODELS[model]
         self._char_write = self._model_info["char_write"]
+        self._lock = asyncio.Lock()
 
     def _include_checksum(self, command: bytes) -> bytes:
         """Include checksum in command.
@@ -50,7 +51,8 @@ class NeewerBTDevice:
     async def _connect(self) -> None:
         """Connect to the device."""
         try:
-            self._client = await establish_connection(self._device)
+            self._client = BleakClient(self._device)
+            await self._client.connect()
         except BleakError as ex:
             self._client = None
             raise ConnectionError from ex
