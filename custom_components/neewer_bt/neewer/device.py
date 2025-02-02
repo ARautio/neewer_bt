@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from bleak import BleakClient, BleakError
 from bleak_retry_connector import establish_connection
@@ -11,7 +11,7 @@ class NeewerBTDevice:
     def __init__(self, device, model: str):
         self.state: Optional[bool] = None
         self._device = device
-        self._client = BleakClient | None
+        self._client: Optional[BleakClient] = None
         self._model_info = MODELS[model]
         self._char_write = self._model_info["char_write"]
 
@@ -24,23 +24,35 @@ class NeewerBTDevice:
     
     async def turn_on(self) -> None:
         """Send turn on command."""
+        """Send turn on command."""
         if self._client is None:
             await self._connect()
-        await self._client.write_gatt_char(self._char_write, self._include_checksum(self._model_info["turn_on"]), False)
-        await self._disconnect()
+        if self._client:  # Type guard
+            await self._client.write_gatt_char(
+                self._char_write, 
+                self._include_checksum(self._model_info["turn_on"]), 
+                response=False
+            )
+            await self._disconnect()
     
     async def turn_off(self) -> None:
         """Send turn off command."""
         if self._client is None:
             await self._connect()
-        await self._client.write_gatt_char(self._char_write, self._include_checksum(self._model_info["turn_off"]), False)
-        await self._disconnect()
+        if self._client:  # Type guard
+            await self._client.write_gatt_char(
+                self._char_write, 
+                self._include_checksum(self._model_info["turn_off"]), 
+                response=False
+            )
+            await self._disconnect()
 
     async def _connect(self) -> None:
         """Connect to the device."""
         try:
             self._client = await establish_connection(self._device)
         except BleakError as ex:
+            self._client = None
             raise ConnectionError from ex
         
     async def _disconnect(self) -> None:
