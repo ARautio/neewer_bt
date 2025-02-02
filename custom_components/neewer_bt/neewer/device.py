@@ -20,8 +20,9 @@ class NeewerBTDevice:
         """Include checksum in command.
         Calculates sum of bytes in command and adds it as last byte.
         """
-        checksum = sum(command) & 0xFF  # Sum all bytes and take last byte only
-        return command + bytes([checksum])
+        command_bytes = bytes(command)  # Convert list to bytes
+        checksum = sum(command_bytes) & 0xFF
+        return command_bytes + bytes([checksum])
     
     async def _connect(self) -> None:
         """Connect to the device."""
