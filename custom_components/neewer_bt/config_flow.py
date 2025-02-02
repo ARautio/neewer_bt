@@ -1,68 +1,42 @@
-"""Config flow for Neewer devices."""
+"""Config flow for Neewer Bluetooth."""
 from __future__ import annotations
+
 from typing import Any
 
-
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_MODEL
+from homeassistant import config_entries
+from homeassistant.components import bluetooth
 from homeassistant.data_entry_flow import FlowResult
-
-import voluptuous as vol
+from homeassistant.const import CONF_ADDRESS, CONF_MODEL
 
 from .const import DOMAIN, LOCAL_NAMES
 
-class NeewerConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Neewer devices."""
+class NeewerBTConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Neewer Bluetooth."""
 
     VERSION = 1
 
-    def __init__(self) -> None:
-        """Initialize the flow."""
-        self.discovered_device: BluetoothServiceInfoBleak | None = None
-        self.model: str | None = None
-
-    async def async_step_bluetooth(
-        self, discovery_info: BluetoothServiceInfoBleak
-    ) -> ConfigFlowResult:
+    async def async_step_bluetooth(self, discovery_info: bluetooth.BluetoothServiceInfoBleak) -> FlowResult:
         """Handle the bluetooth discovery step."""
-        NEEWER_PREFIXES = list(LOCAL_NAMES)
-
-        if not any(
-            discovery_info.name.startswith(prefix) 
-            for prefix in NEEWER_PREFIXES
-        ):
-            return self.async_abort(reason="not_supported_device")
-
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
 
-        self.discovered_device = discovery_info
-        self.model = next(
-            (prefix for prefix in NEEWER_PREFIXES if discovery_info.name.startswith(prefix)),
-            "unknown"
+        return await self.async_step_confirm(
+            {
+                "title": discovery_info.name,
+                "address": discovery_info.address,
+                "model": discovery_info.name,
+            }
         )
-        self.context["title_placeholders"] = {"name": self.model}
 
-        return await self.async_step_user()
-    
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Handle user input for device name."""
-        if user_input is None:
-            return self.async_show_form(
-                step_id="user",
-                data_schema=vol.Schema({
-                    vol.Required(CONF_NAME, default=self.discovered_device.name): str,
-                }),
+    async def async_step_confirm(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Confirm the setup."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title=user_input["title"],
+                data={
+                    [CONF_ADDRESS]: user_input[CONF_ADDRESS],
+                    [CONF_MODEL]: user_input[CONF_MODEL],
+                },
             )
 
-        return self.async_create_entry(
-            title=user_input[CONF_NAME],
-            data={
-                CONF_ADDRESS: self.discovered_device.address,
-                CONF_NAME: user_input[CONF_NAME],
-                CONF_MODEL: self.model,
-            },
-        )
+        return self.async_show_form(step_id="confirm")

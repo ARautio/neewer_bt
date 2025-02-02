@@ -1,83 +1,43 @@
-"""The Neewer bluetooth integration."""
+"""The Neewer Bluetooth integration."""
 from __future__ import annotations
 
 import logging
-from typing import Callable
 
+from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform, CONF_ADDRESS
+from homeassistant.const import Platform, CONF_ADDRESS, CONF_MODEL
 from homeassistant.core import HomeAssistant
-from homeassistant.components.bluetooth import (
-    async_ble_device_from_address
-)
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .coordinator import NeewerBTCoordinator
 from .const import DOMAIN
-
-_LOGGER = logging.getLogger(__name__)
+from .neewer.device import NeewerBTDevice
 
 PLATFORMS: list[Platform] = [Platform.LIGHT]
 
-@dataclass
-class RuntimeData:
-    """Class to hold your data."""
-    coordinator: DataUpdateCoordinator
+_LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    # Initialise the coordinator that manages data updates from your api.
-    # This is defined in coordinator.py
-    coordinator = NeewerBTCoordinator(hass, config_entry)
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Neewer BT from a config entry."""
+    address = entry.data[CONF_ADDRESS]
+    model = entry.data[CONF_MODEL]
 
-    # Perform an initial data load from api.
-    # async_config_entry_first_refresh() is special in that it does not log errors if it fails
-    await coordinator.async_config_entry_first_refresh()
+    ble_device = bluetooth.async_ble_device_from_address(hass, address.upper(), True)
+    if not ble_device:
+        raise ConfigEntryNotReady(
+            f"Could not find Neewer BT device with address {address}"
+        )
 
-    # Test to see if api initialised correctly, else raise ConfigNotReady to make HA retry setup
-    if coordinator.data is None:
-        raise ConfigEntryNotReady
+    device = NeewerBTDevice(ble_device, model)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = device
 
-    # Initialise a listener for config flow options changes.
-    # This will be removed automatically if the integraiton is unloaded.
-    # See config_flow for defining an options setting that shows up as configure
-    # on the integration.
-    # If you do not want any config flow options, no need to have listener.
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(_async_update_listener)
-    )
-
-    # Add the coordinator and update listener to config runtime data to make
-    # accessible throughout your integration
-    config_entry.runtime_data = RuntimeData(coordinator)
-
-    # Setup platforms (based on the list of entity types in PLATFORMS defined above)
-    # This calls the async_setup method in each of your entity type files.
-    await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
-
-    # Return true to denote a successful setup.
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    
     return True
 
-async def _async_update_listener(hass: HomeAssistant, config_entry):
-    """Handle config options update."""
-    # Reload the integration when the options change.
-    await hass.config_entries.async_reload(config_entry.entry_id)
-
-
-async def async_remove_config_entry_device(
-    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
-) -> bool:
-    """Delete device if selected from UI."""
-    # Adding this function shows the delete device option in the UI.
-    # Remove this function if you do not want that option.
-    # You may need to do some checks here before allowing devices to be removed.
-    return True
-
-
-async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    # This is called when you remove your integration or shutdown HA.
-    # If you have created any custom services, they need to be removed here too.
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
 
-    # Unload platforms and return result
-    return await hass.config_entries.async_unload_platforms(config_entry, PLATFORMS)
+    return unload_ok

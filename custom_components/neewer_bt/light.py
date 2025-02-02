@@ -1,68 +1,45 @@
-"""Support for NeewerBT lights."""
+"""Support for Neewer Bluetooth lights."""
 from __future__ import annotations
 
-import logging
 from typing import Any
 
-from homeassistant.components.light import (
-    LightEntity,
-    ColorMode
-)
+from homeassistant.components.light import LightEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_MODEL
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, MANUFACTURER, MODELS
-from .coordinator import NeewerBTCoordinator
-
-_LOGGER = logging.getLogger(__name__)
+from .const import DOMAIN
+from .neewer.device import NeewerBTDevice
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Neewer light."""
-    coordinator: NeewerBTCoordinator = config_entry.runtime_data.coordinator
-    await coordinator.async_config_entry_first_refresh()
-    async_add_entities([NeewerLight(coordinator, config_entry)])
+    """Set up the Neewer Light."""
+    device = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([NeewerLight(device)])
 
 class NeewerLight(LightEntity):
-    """Neewer TL40 light."""
+    """Representation of a Neewer Bluetooth Light."""
 
-    _attr_supported_color_modes = {ColorMode.ONOFF}
-    _attr_color_mode = ColorMode.ONOFF
-    _attr_has_entity_name = True
-
-    def __init__(self, coordinator: NeewerBTCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, device: NeewerBTDevice) -> None:
         """Initialize the light."""
-        self._coordinator = coordinator
-        self._attr_unique_id = entry.data[CONF_ADDRESS]
-        self._attr_name = entry.data[CONF_NAME]
-        self._model = entry.data[CONF_MODEL]
-        self._model_info = MODELS.get(self._model, MODELS["NEEWER_TL40"])
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=self._attr_name,
-            manufacturer=MANUFACTURER,
-            model=self._model_info["name"],
-        )
+        self._device = device
+        self._attr_unique_id = device._device.address
+        self._attr_name = "Neewer Light"
 
     @property
     def is_on(self) -> bool | None:
         """Return true if light is on."""
-        return self._coordinator.data.state
+        return self._device.state
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn on light."""
-        await self._coordinator.turn_on()
+        """Turn the light on."""
+        await self._device.turn_on()
+        self._device.state = True
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn off light."""
-        await self._coordinator.turn_off()
+        """Turn the light off."""
+        await self._device.turn_off()
+        self._device.state = False
