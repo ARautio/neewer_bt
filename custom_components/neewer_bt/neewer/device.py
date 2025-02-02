@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import asyncio
 
 from bleak import BleakClient, BleakError
@@ -16,13 +16,12 @@ class NeewerBTDevice:
         self._char_write = self._model_info["char_write"]
         self._lock = asyncio.Lock()
 
-    def _include_checksum(self, command: bytes) -> bytes:
+    def _include_checksum(self, command: List[int]) -> List[int]:
         """Include checksum in command.
         Calculates sum of bytes in command and adds it as last byte.
         """
-        command_bytes = bytes(command)  # Convert list to bytes
-        checksum = sum(command_bytes) & 0xFF
-        return command_bytes + bytes([checksum])
+        checksum = sum(command) & 0xFF
+        return command + [checksum]
     
     async def _connect(self) -> None:
         """Connect to the device."""
@@ -35,7 +34,7 @@ class NeewerBTDevice:
                 self._client = None
                 raise ConnectionError(f"Failed to connect: {ex}") from ex
 
-    async def _write_command(self, command: bytes) -> None:
+    async def _write_command(self, command: List[int]) -> None:
         """Write command to device with connection handling."""
         try:
             await self._connect()
