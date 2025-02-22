@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.light import LightEntity
+from homeassistant.components.light import LightEntity, ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -23,11 +23,19 @@ async def async_setup_entry(
 class NeewerLight(LightEntity):
     """Representation of a Neewer Bluetooth Light."""
 
+    _attr_color_mode = ColorMode.ONOFF
+    _attr_supported_color_modes = {ColorMode.ONOFF}
+
     def __init__(self, device: NeewerBTDevice) -> None:
         """Initialize the light."""
         self._device = device
         self._attr_unique_id = device._device.address
         self._attr_name = "Neewer Light"
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if light is on."""
+        return self._device.state
 
     @property
     def is_on(self) -> bool | None:
