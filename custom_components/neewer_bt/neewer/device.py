@@ -5,6 +5,7 @@ from bleak import BleakClient, BleakError
 
 from ..const import MODELS
 
+
 class NeewerBTDevice:
     """Handle Neewer device."""
 
@@ -22,7 +23,7 @@ class NeewerBTDevice:
         """
         checksum = sum(command) & 0xFF
         return command + [checksum]
-    
+
     async def _connect(self) -> None:
         """Connect to the device."""
         async with self._lock:
@@ -39,9 +40,7 @@ class NeewerBTDevice:
         try:
             await self._connect()
             await self._client.write_gatt_char(
-                self._char_write,
-                self._include_checksum(command),
-                response=False
+                self._char_write, self._include_checksum(command), response=False
             )
         finally:
             if self._client and self._client.is_connected:
@@ -57,3 +56,21 @@ class NeewerBTDevice:
         """Send turn off command."""
         await self._write_command(self._model_info["turn_off"])
         self.state = False
+
+    async def set_cct(self, brightness: int, temperature: int, gm: int = 50) -> None:
+        """Send CCT command with brightness, temperature and GM compensation.
+
+        brightness: 0-100
+        temperature: 32-56 (3200K-5600K)
+        gm: 0-100, default centered at 50
+        """
+        command = [
+            120,
+            135,
+            2,
+            max(0, min(100, int(brightness))),
+            max(32, min(56, int(temperature))),
+            max(0, min(100, int(gm))),
+        ]
+        await self._write_command(command)
+        self.state = True
